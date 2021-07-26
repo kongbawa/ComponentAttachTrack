@@ -80,28 +80,26 @@ const FSlateBrush* FComponentAttachTrackEditor::GetIconBrush() const
 	return nullptr;
 }
 
-UComponentAttachSection* FComponentAttachTrackEditor::CreateNewSection(UComponentAttachTrack* Track, TSubclassOf<UComponentAttachSection> ClassType) const
+void FComponentAttachTrackEditor::CreateNewSection(UComponentAttachTrack* Track) const
 {
 	TSharedPtr<ISequencer> SequencerPin = GetSequencer();
-	UClass* Class = ClassType.Get();
+	UClass* Class = UComponentAttachSection::StaticClass();
 
 	if (Class && SequencerPin)
 	{
 		FScopedTransaction Transaction(FText::Format(LOCTEXT("AddCustomSection_Transaction", "Add New Section From Class %s"), FText::FromName(Class->GetFName())));
-		UComponentAttachSection* NewSection = NewObject<UComponentAttachSection>(Track, Class, NAME_None, RF_Transactional);
+		UComponentAttachSection* NewAttachSection = NewObject<UComponentAttachSection>(Track, Class, NAME_None, RF_Transactional);
 
 		const FQualifiedFrameTime CurrentTime = SequencerPin->GetLocalTime();
 
 		const FFrameNumber Duration = (5.f * CurrentTime.Rate).FrameNumber;
-		NewSection->SetRange(TRange<FFrameNumber>(CurrentTime.Time.FrameNumber, CurrentTime.Time.FrameNumber + Duration));
-		NewSection->InitialPlacement(Track->GetAllSections(), CurrentTime.Time.FrameNumber, Duration.Value, Track->SupportsMultipleRows());
+		NewAttachSection->SetRange(TRange<FFrameNumber>(CurrentTime.Time.FrameNumber, CurrentTime.Time.FrameNumber + Duration));
+		NewAttachSection->InitialPlacement(Track->GetAllSections(), CurrentTime.Time.FrameNumber, Duration.Value, Track->SupportsMultipleRows());
 
-		Track->AddSection(*NewSection);
+		Track->AddSection(*NewAttachSection);
 
 		SequencerPin->NotifyMovieSceneDataChanged(EMovieSceneDataChangeType::MovieSceneStructureItemAdded);
-		return NewSection;
 	}
-	return nullptr;
 }
 
 void FComponentAttachTrackEditor::AddNewObjectBindingTrack(TArray<FGuid> InObjectBindings) const
@@ -122,7 +120,7 @@ void FComponentAttachTrackEditor::AddNewObjectBindingTrack(TArray<FGuid> InObjec
 	for (const FGuid& ObjectBindingID : InObjectBindings)
 	{
 		UComponentAttachTrack* CustomTrack = CastChecked<UComponentAttachTrack>(MovieScene->AddTrack(ClassToAdd, ObjectBindingID));
-		CreateNewSection(CustomTrack, UComponentAttachSection::StaticClass());
+		CreateNewSection(CustomTrack);
 
 		if (GetSequencer().IsValid())
 		{

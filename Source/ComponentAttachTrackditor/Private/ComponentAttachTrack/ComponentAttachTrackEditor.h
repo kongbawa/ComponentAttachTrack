@@ -20,5 +20,5 @@ public:
 	virtual const FSlateBrush* GetIconBrush() const override;
 private:
 	void AddNewObjectBindingTrack(TArray<FGuid> InObjectBindings) const;
-	UComponentAttachSection* CreateNewSection(UComponentAttachTrack* Track, TSubclassOf<UComponentAttachSection> ClassType) const;
+	void CreateNewSection(UComponentAttachTrack* Track) const;
 };
