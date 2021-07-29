@@ -88,8 +88,9 @@ void FComponentAttachTrackEditor::CreateNewSection(UComponentAttachTrack* Track)
 	if (Class && SequencerPin)
 	{
 		FScopedTransaction Transaction(FText::Format(LOCTEXT("AddCustomSection_Transaction", "Add New Section From Class %s"), FText::FromName(Class->GetFName())));
+		//UMovieScene3DTransformSection* NewSection = NewObject<UMovieScene3DTransformSection>(Track, UMovieScene3DTransformSection::StaticClass(), NAME_None, RF_Transactional);
 		UComponentAttachSection* NewAttachSection = NewObject<UComponentAttachSection>(Track, Class, NAME_None, RF_Transactional);
-
+		
 		const FQualifiedFrameTime CurrentTime = SequencerPin->GetLocalTime();
 
 		const FFrameNumber Duration = (5.f * CurrentTime.Rate).FrameNumber;
@@ -97,6 +98,7 @@ void FComponentAttachTrackEditor::CreateNewSection(UComponentAttachTrack* Track)
 		NewAttachSection->InitialPlacement(Track->GetAllSections(), CurrentTime.Time.FrameNumber, Duration.Value, Track->SupportsMultipleRows());
 
 		Track->AddSection(*NewAttachSection);
+		//Track->AddSection(*NewSection);
 
 		SequencerPin->NotifyMovieSceneDataChanged(EMovieSceneDataChangeType::MovieSceneStructureItemAdded);
 	}

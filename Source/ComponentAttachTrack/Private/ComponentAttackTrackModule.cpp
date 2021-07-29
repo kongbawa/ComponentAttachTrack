@@ -62,7 +62,7 @@ extern void DebugLog(const UObject* WorldContextObject, const FString& Msg)
 {
 	const auto MsgFinal = AppendLogPrefix(WorldContextObject, Msg);
 
-	UE_LOG(LogComponentAttach, Verbose, TEXT("%s"), *MsgFinal);
+	UE_LOG(LogComponentAttach, Verbose, TEXT("[ComponentAttach] %s"), *MsgFinal);
 }
 
 

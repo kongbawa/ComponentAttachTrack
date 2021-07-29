@@ -7,6 +7,7 @@
 #include "MovieSceneKeyStruct.h"
 #include "Channels/MovieSceneIntegerChannel.h"
 #include "Sections/MovieSceneActorReferenceSection.h"
+#include "Channels/MovieSceneFloatChannel.h"
 #include "ComponentAttachSection.generated.h"
 
 /**
@@ -21,10 +22,48 @@ public:
 	UComponentAttachSection();
 
 public:
-	static FString GetTitle() { return TEXT("ComponentAttach"); }
+	FString GetTitle() { return TEXT("ComponentAttach"); }
 
-	static USceneComponent* GetAttachComponent(const AActor* InParentActor, const FMovieSceneActorReferenceKey& Key);
+	USceneComponent* GetAttachComponent(const AActor* InParentActor, const FMovieSceneActorReferenceKey& Key) const;
+
+	FVector GetTranslation(FFrameTime Time) const;
+	FRotator GetRotation(FFrameTime Time) const;
+	FVector GetScale(FFrameTime Time) const;
+	FTransform GetTransform(FFrameTime Time) const;
 public:
 	UPROPERTY()
 	FMovieSceneActorReferenceData AttachActorData;
+
+	/** Translation curves */
+	UPROPERTY()
+		FMovieSceneFloatChannel Translation[3];
+
+	/** Rotation curves */
+	UPROPERTY()
+		FMovieSceneFloatChannel Rotation[3];
+
+	/** Scale curves */
+	UPROPERTY()
+		FMovieSceneFloatChannel Scale[3];
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attach")
+		EAttachmentRule AttachmentLocationRule;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attach")
+		EAttachmentRule AttachmentRotationRule;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attach")
+		EAttachmentRule AttachmentScaleRule;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attach")
+		EDetachmentRule DetachmentLocationRule;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attach")
+		EDetachmentRule DetachmentRotationRule;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attach")
+		EDetachmentRule DetachmentScaleRule;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Attach")
+		bool RestoreRelativeTransformWhenFinish;
 };

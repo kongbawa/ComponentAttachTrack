@@ -11,8 +11,10 @@ struct FCachedComponentAttachTrackData final : IPersistentEvaluationData
 	FTransform SourceRelativeTransform;
 	FName SourceSocket;
 	TWeakObjectPtr<class USceneComponent> AttachComponent = nullptr;
+	FDetachmentTransformRules DetachRules = FDetachmentTransformRules::KeepWorldTransform;
+	bool RestoreRelativeTransformWhenFinish = true;
 
-	static FCachedComponentAttachTrackData Get(const UObject& InObject)
+	static FCachedComponentAttachTrackData Get(const UObject& InObject,const UComponentAttachSection* Section)
 	{
 		FCachedComponentAttachTrackData TrackData;
 		UObject* Object = const_cast<UObject*>(&InObject);
@@ -20,7 +22,9 @@ struct FCachedComponentAttachTrackData final : IPersistentEvaluationData
 		TrackData.SourceComponent = TrackData.AttachComponent->GetAttachParent();
 		TrackData.SourceRelativeTransform = TrackData.AttachComponent->GetRelativeTransform();
 		TrackData.SourceSocket = TrackData.AttachComponent->GetAttachSocketName();		
-		DebugLog(FString::Printf(TEXT("Cache TrackData Actor %s"), *TrackData.SourceComponent->GetOwner()->GetName()));
+		TrackData.DetachRules = FDetachmentTransformRules(Section->DetachmentLocationRule, Section->DetachmentRotationRule, Section->DetachmentScaleRule, false);
+		TrackData.RestoreRelativeTransformWhenFinish = Section->RestoreRelativeTransformWhenFinish;
+		DebugLog(FString::Printf(TEXT("Cache TrackData Actor %s SourceRelativeTransform %s"), *TrackData.SourceComponent->GetOwner()->GetName(), *TrackData.SourceRelativeTransform.ToString()));
 		return TrackData;
 	}
 
@@ -29,7 +33,10 @@ struct FCachedComponentAttachTrackData final : IPersistentEvaluationData
 		if (AttachComponent.IsValid() && SourceComponent.IsValid())
 		{
 			DebugLog(FString::Printf(TEXT("RestoreState Relative %s SourceSocket %s actor %s"), *SourceRelativeTransform.ToString(), *SourceSocket.ToString(), *SourceComponent->GetOwner()->GetName()));
-			AttachComponent->SetRelativeTransform(SourceRelativeTransform);
+			AttachComponent->DetachFromComponent(DetachRules);
+
+			if(RestoreRelativeTransformWhenFinish)
+				AttachComponent->SetRelativeTransform(FTransform::Identity);
 			AttachComponent->AttachToComponent(SourceComponent.Get(), FAttachmentTransformRules::KeepRelativeTransform, SourceSocket);
 			SourceComponent = nullptr;
 			SourceSocket = NAME_None;
@@ -59,10 +66,16 @@ struct FStopComponentAttachPreAnimatedToken final : IMovieScenePreAnimatedToken
 	
 	struct FProducer final : IMovieScenePreAnimatedTokenProducer
 	{
+		const UComponentAttachSection* Section;
+
+		explicit FProducer(const UComponentAttachSection* InSection)
+			: Section(InSection)
+		{}
+
 		virtual IMovieScenePreAnimatedTokenPtr CacheExistingState(UObject& Object) const override
 		{
 			DebugLog(FString::Printf(TEXT("CacheExistingState")));
-			return FStopComponentAttachPreAnimatedToken(FCachedComponentAttachTrackData::Get(Object));
+			return FStopComponentAttachPreAnimatedToken(FCachedComponentAttachTrackData::Get(Object, Section));
 		}
 	};
 };
@@ -79,12 +92,15 @@ struct FComponentAttachExecutionToken final : IMovieSceneExecutionToken
 
 	virtual void Execute(const FMovieSceneContext& Context, const FMovieSceneEvaluationOperand& Operand, FPersistentEvaluationData& PersistentData, IMovieScenePlayer& Player) override
 	{
+		const int Stat = static_cast<int>(Context.GetStatus());
+		DebugLog(FString::Printf(TEXT("FComponentAttachEvalTemplate::Execute。 Stat %d"), Stat));
 		FCachedComponentAttachTrackData& TrackData = PersistentData.GetOrAddTrackData<FCachedComponentAttachTrackData>();
 		if ((Context.GetStatus() != EMovieScenePlayerStatus::Playing && Context.GetStatus() != EMovieScenePlayerStatus::Scrubbing) || Context.HasJumped())
 		{
 			TrackData.RestoreState();
-			return;
+			//return;
 		}
+		//DebugLog(FString::Printf(TEXT("FComponentAttachEvalTemplate::Execute。2222222222222 ")));
 		//const FName AttachComponentName = Section->ComponentName;
 		//if (AttachComponentName == NAME_None)
 		//{
@@ -128,8 +144,7 @@ struct FComponentAttachExecutionToken final : IMovieSceneExecutionToken
 			return;
 
 		FName AttachSocketName = AttachKey.SocketName;
-		//const int Stat = static_cast<int>(Context.GetStatus());
-		// DebugLog(FString::Printf(TEXT("FComponentAttachEvalTemplate::Execute Statu = %d  SequenceID = %d , ObjectBindId = %s"), Stat, Operand.SequenceID.GetInternalValue(), *Operand.ObjectBindingID.ToString()));
+		
 		for (TWeakObjectPtr<> Object : Player.FindBoundObjects(Operand))
 		{
 			USceneComponent* Component = Cast<USceneComponent>(Object.Get());
@@ -142,10 +157,19 @@ struct FComponentAttachExecutionToken final : IMovieSceneExecutionToken
 					TrackData.SourceRelativeTransform = Component->GetRelativeTransform();
 					TrackData.SourceSocket = Component->GetAttachSocketName();
 					TrackData.AttachComponent = Component;
+					TrackData.RestoreRelativeTransformWhenFinish = Section->RestoreRelativeTransformWhenFinish;
+					TrackData.DetachRules = FDetachmentTransformRules(Section->DetachmentLocationRule, Section->DetachmentRotationRule, Section->DetachmentScaleRule, false);
 					DebugLog(FString::Printf(TEXT("FComponentAttachEvalTemplate::Execute Socket %s Owner %s"), *AttachTargetComponent->GetName(), *Component->GetOwner()->GetName()));
-					Player.SavePreAnimatedState(*Component, FStopComponentAttachPreAnimatedToken::GetAnimTypeID(), FStopComponentAttachPreAnimatedToken::FProducer());
-					Component->AttachToComponent(AttachTargetComponent, FAttachmentTransformRules::KeepRelativeTransform, AttachSocketName);
+					Player.SavePreAnimatedState(*Component, FStopComponentAttachPreAnimatedToken::GetAnimTypeID(), FStopComponentAttachPreAnimatedToken::FProducer(Section));
+
+					FAttachmentTransformRules AttachmentRules(Section->AttachmentLocationRule, Section->AttachmentRotationRule, Section->AttachmentScaleRule, false);
+
+					Component->AttachToComponent(AttachTargetComponent, AttachmentRules, AttachSocketName);
+					
 				}
+				const FFrameTime Time = Context.GetTime();
+				const FTransform Transfrom = Section->GetTransform(Time);
+				Component->SetRelativeTransform(Transfrom);
 				break;
 				/*
 				TInlineComponentArray<USceneComponent*> PotentialAttachComponents(Actor);

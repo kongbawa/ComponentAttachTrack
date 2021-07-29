@@ -39,7 +39,7 @@ public class ComponentAttachTrack : ModuleRules
 				"Slate",
 				"SlateCore",
 
-                "LevelSequence",
+				"LevelSequence",
                 "MovieScene",
 				"MovieSceneTracks",
 				// ... add private dependencies that you statically link with here ...	
