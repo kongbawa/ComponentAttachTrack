@@ -20,6 +20,7 @@
 ![BindActor](./Images/SelectComponent.png)
 
 * 调整 Component 位置
+
 ![BindActor](./Images/ComponentTransform.png)
 ***
 # 流程图
