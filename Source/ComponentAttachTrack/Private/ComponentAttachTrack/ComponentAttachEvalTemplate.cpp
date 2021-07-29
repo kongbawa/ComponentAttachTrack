@@ -93,7 +93,7 @@ struct FComponentAttachExecutionToken final : IMovieSceneExecutionToken
 	virtual void Execute(const FMovieSceneContext& Context, const FMovieSceneEvaluationOperand& Operand, FPersistentEvaluationData& PersistentData, IMovieScenePlayer& Player) override
 	{
 		const int Stat = static_cast<int>(Context.GetStatus());
-		DebugLog(FString::Printf(TEXT("FComponentAttachEvalTemplate::Execute。 Stat %d"), Stat));
+		//DebugLog(FString::Printf(TEXT("FComponentAttachEvalTemplate::Execute。 Stat %d"), Stat));
 		FCachedComponentAttachTrackData& TrackData = PersistentData.GetOrAddTrackData<FCachedComponentAttachTrackData>();
 		if ((Context.GetStatus() != EMovieScenePlayerStatus::Playing && Context.GetStatus() != EMovieScenePlayerStatus::Scrubbing) || Context.HasJumped())
 		{
