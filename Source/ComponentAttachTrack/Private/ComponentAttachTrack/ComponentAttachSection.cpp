@@ -79,60 +79,61 @@ struct FComponentAttachSectionEditorData
 			TransformMetaData[8].bCanCollapseToTrack = false;
 		}
 
-		ExternalValues[0].OnGetExternalValue = ExtractTranslationX;
-		ExternalValues[1].OnGetExternalValue = ExtractTranslationY;
-		ExternalValues[2].OnGetExternalValue = ExtractTranslationZ;
-		ExternalValues[3].OnGetExternalValue = ExtractRotationX;
-		ExternalValues[4].OnGetExternalValue = ExtractRotationY;
-		ExternalValues[5].OnGetExternalValue = ExtractRotationZ;
-		ExternalValues[6].OnGetExternalValue = ExtractScaleX;
-		ExternalValues[7].OnGetExternalValue = ExtractScaleY;
-		ExternalValues[8].OnGetExternalValue = ExtractScaleZ;
+		//ExternalValues[0].OnGetExternalValue = ExtractTranslationX;
+		//ExternalValues[1].OnGetExternalValue = ExtractTranslationY;
+		//ExternalValues[2].OnGetExternalValue = ExtractTranslationZ;
+		//ExternalValues[3].OnGetExternalValue = ExtractRotationX;
+		//ExternalValues[4].OnGetExternalValue = ExtractRotationY;
+		//ExternalValues[5].OnGetExternalValue = ExtractRotationZ;
+		//ExternalValues[6].OnGetExternalValue = ExtractScaleX;
+		//ExternalValues[7].OnGetExternalValue = ExtractScaleY;
+		//ExternalValues[8].OnGetExternalValue = ExtractScaleZ;
 
-		ExternalValues[0].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
-		ExternalValues[1].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
-		ExternalValues[2].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
-		ExternalValues[3].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
-		ExternalValues[4].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
-		ExternalValues[5].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
-		ExternalValues[6].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
-		ExternalValues[7].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
-		ExternalValues[8].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
+		//ExternalValues[0].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
+		//ExternalValues[1].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
+		//ExternalValues[2].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
+		//ExternalValues[3].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
+		//ExternalValues[4].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
+		//ExternalValues[5].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
+		//ExternalValues[6].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
+		//ExternalValues[7].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
+		//ExternalValues[8].OnGetCurrentValueAndWeight = GetChannelValueAndWeight;
+	}
+
+	FTransform GetRelativeTransform(USceneComponent* Component)
+	{
+		FTransform Transform;
+		return Transform;
 	}
 
 	static TOptional<FVector> GetTranslation(UObject& InObject, FTrackInstancePropertyBindings* Bindings)
 	{
-		if (USceneComponent* SceneComponent = Cast<USceneComponent>(&InObject))
-		{
-			FVector RelativeLocation = SceneComponent->GetRelativeLocation();
-			FVector RelativeTranslation = SceneComponent->GetRelativeTransform().GetTranslation();
-			DebugLog(FString::Printf(TEXT("Add Key RelativeLocation %s RelativeTranslation %s"), *RelativeLocation.ToString(), *RelativeTranslation.ToString()));
-			return SceneComponent->GetRelativeLocation();
-			//return SceneComponent->GetRelativeTransform().GetTranslation();
-		}
-
+		//if (USceneComponent* SceneComponent = Cast<USceneComponent>(&InObject))
+		//{
+		//	return SceneComponent->GetRelativeLocation();
+		//}
 
 		return TOptional<FVector>();
 	}
 
 	static TOptional<FRotator> GetRotator(UObject& InObject, FTrackInstancePropertyBindings* Bindings)
 	{
-		if (USceneComponent* SceneComponent = Cast<USceneComponent>(&InObject))
-		{
-			return SceneComponent->GetRelativeRotation();
-		}
+		//if (USceneComponent* SceneComponent = Cast<USceneComponent>(&InObject))
+		//{
+		//	return SceneComponent->GetRelativeRotation();
+		//}
 
 		return TOptional<FRotator>();
 	}
 
 	static TOptional<FVector> GetScale(UObject& InObject, FTrackInstancePropertyBindings* Bindings)
 	{
-		const FStructProperty* TransformProperty = Bindings ? CastField<FStructProperty>(Bindings->GetProperty(InObject)) : nullptr;
+		//const FStructProperty* TransformProperty = Bindings ? CastField<FStructProperty>(Bindings->GetProperty(InObject)) : nullptr;
 
-		if (USceneComponent* SceneComponent = Cast<USceneComponent>(&InObject))
-		{
-			return SceneComponent->GetRelativeTransform().GetScale3D();
-		}
+		//if (USceneComponent* SceneComponent = Cast<USceneComponent>(&InObject))
+		//{
+		//	return SceneComponent->GetRelativeTransform().GetScale3D();
+		//}
 
 		return TOptional<FVector>();
 	}
@@ -210,7 +211,7 @@ UComponentAttachSection::UComponentAttachSection()
 		GetLinkerCustomVersion(FSequencerObjectVersion::GUID) < FSequencerObjectVersion::WhenFinishedDefaultsToProjectDefault ?
 		EMovieSceneCompletionMode::RestoreState :
 		EMovieSceneCompletionMode::ProjectDefault);
-	BlendType = EMovieSceneBlendType::Absolute;
+	BlendType = EMovieSceneBlendType::Relative;
 	bSupportsInfiniteRange = true;
 
 	Translation[0].SetDefault(0.f);

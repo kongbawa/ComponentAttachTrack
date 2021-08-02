@@ -8,7 +8,7 @@
 struct FCachedComponentAttachTrackData final : IPersistentEvaluationData
 {
 	TWeakObjectPtr<class USceneComponent> SourceComponent = nullptr;
-	FTransform SourceRelativeTransform;
+	//FTransform SourceRelativeTransform;
 	FName SourceSocket;
 	TWeakObjectPtr<class USceneComponent> AttachComponent = nullptr;
 	FDetachmentTransformRules DetachRules = FDetachmentTransformRules::KeepWorldTransform;
@@ -20,11 +20,11 @@ struct FCachedComponentAttachTrackData final : IPersistentEvaluationData
 		UObject* Object = const_cast<UObject*>(&InObject);
 		TrackData.AttachComponent = Cast<USceneComponent>(Object);
 		TrackData.SourceComponent = TrackData.AttachComponent->GetAttachParent();
-		TrackData.SourceRelativeTransform = TrackData.AttachComponent->GetRelativeTransform();
+		//TrackData.SourceRelativeTransform = TrackData.AttachComponent->GetRelativeTransform();
 		TrackData.SourceSocket = TrackData.AttachComponent->GetAttachSocketName();		
 		TrackData.DetachRules = FDetachmentTransformRules(Section->DetachmentLocationRule, Section->DetachmentRotationRule, Section->DetachmentScaleRule, false);
 		TrackData.RestoreRelativeTransformWhenFinish = Section->RestoreRelativeTransformWhenFinish;
-		DebugLog(FString::Printf(TEXT("Cache TrackData Actor %s SourceRelativeTransform %s"), *TrackData.SourceComponent->GetOwner()->GetName(), *TrackData.SourceRelativeTransform.ToString()));
+		DebugLog(FString::Printf(TEXT("Cache TrackData Actor %s "), *TrackData.SourceComponent->GetOwner()->GetName()));
 		return TrackData;
 	}
 
@@ -32,12 +32,21 @@ struct FCachedComponentAttachTrackData final : IPersistentEvaluationData
 	{
 		if (AttachComponent.IsValid() && SourceComponent.IsValid())
 		{
-			DebugLog(FString::Printf(TEXT("RestoreState Relative %s SourceSocket %s actor %s"), *SourceRelativeTransform.ToString(), *SourceSocket.ToString(), *SourceComponent->GetOwner()->GetName()));
-			AttachComponent->DetachFromComponent(DetachRules);
+			DebugLog(FString::Printf(TEXT("RestoreState SourceSocket %s actor %s attach name %s"), 
+				*SourceSocket.ToString(), *SourceComponent->GetOwner()->GetName(), *AttachComponent->GetAttachParent()->GetName()));
+			FTransform Transform = AttachComponent->GetComponentTransform();
+			
+			//AttachComponent->DetachFromComponent(DetachRules);
+			FAttachmentTransformRules AttachmentRules = FAttachmentTransformRules(
+				DetachRules.LocationRule == EDetachmentRule::KeepRelative ? EAttachmentRule::KeepRelative : EAttachmentRule::KeepWorld,
+				DetachRules.RotationRule == EDetachmentRule::KeepRelative ? EAttachmentRule::KeepRelative : EAttachmentRule::KeepWorld,
+				DetachRules.ScaleRule == EDetachmentRule::KeepRelative ? EAttachmentRule::KeepRelative : EAttachmentRule::KeepWorld, false);
 
-			if(RestoreRelativeTransformWhenFinish)
+			AttachComponent->AttachToComponent(SourceComponent.Get(), AttachmentRules, SourceSocket);
+
+
+			if (RestoreRelativeTransformWhenFinish)
 				AttachComponent->SetRelativeTransform(FTransform::Identity);
-			AttachComponent->AttachToComponent(SourceComponent.Get(), FAttachmentTransformRules::KeepRelativeTransform, SourceSocket);
 			SourceComponent = nullptr;
 			SourceSocket = NAME_None;
 			AttachComponent = nullptr;
@@ -154,7 +163,7 @@ struct FComponentAttachExecutionToken final : IMovieSceneExecutionToken
 				{
 				
 					TrackData.SourceComponent = Component->GetAttachParent();
-					TrackData.SourceRelativeTransform = Component->GetRelativeTransform();
+					//TrackData.SourceRelativeTransform = Component->GetRelativeTransform();
 					TrackData.SourceSocket = Component->GetAttachSocketName();
 					TrackData.AttachComponent = Component;
 					TrackData.RestoreRelativeTransformWhenFinish = Section->RestoreRelativeTransformWhenFinish;
@@ -171,11 +180,6 @@ struct FComponentAttachExecutionToken final : IMovieSceneExecutionToken
 				const FTransform Transfrom = Section->GetTransform(Time);
 				Component->SetRelativeTransform(Transfrom);
 				break;
-				/*
-				TInlineComponentArray<USceneComponent*> PotentialAttachComponents(Actor);
-				for (USceneComponent* Component : PotentialAttachComponents)
-				{
-				}*/
 			}
 		}
 	}
